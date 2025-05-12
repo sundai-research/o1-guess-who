@@ -1,0 +1,10 @@
+*.log
+*.tmp
+.DS_Store
+__pycache__/
+*.py[cod]
+*.class
+.env
+venv/
+.idea/
+.vscode/
