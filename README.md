@@ -1,3 +1,11 @@
+
+## Example Plot
+
+Below is an example comparison of two experiments: one with "low" reasoning effort (baseline) and another with "high" reasoning effort, both attempting to identify Indira Gandhi from a list of 100 people:
+
+![Experiment Comparison](docs/images/comparison.png)
+
+The solid lines show how far each question was from achieving a perfect 50/50 split of the remaining candidates (lower is better). The dashed lines show how many candidates remained after each question.
 # Guess Who Game with OpenAI CLI
 
 A Python command-line application that plays a "guess the character" game using OpenAI models. It reads a list of names from a text file, lets the model ask yes/no questions to identify a hidden target, and evaluates how efficiently the model splits the remaining possibilities at each step.
