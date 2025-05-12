@@ -4,15 +4,33 @@ A Python command-line application that plays a "guess the character" game using 
 
 ## Features
 
-- Load a list of characters from a plain text file (`input_list.txt`).
-- Choose a target name explicitly or at random.
-- Use any supported OpenAI model for question generation (e.g. `gpt-3.5-turbo`, `gpt-4o-mini`).
-- Stubbed or real oracle responses via OpenAI, answering `yes`, `no`, or `successful_guess` tags.
-- Asynchronous calls for rapid batch evaluation of split performance.
-- Tracks and plots:
-  - **Deviation** of each question's yes/no split from the perfect 50/50 (ideal split = 0.50).
-  - **Survivor count** (remaining candidates) on a secondary axis.
-- Configurable maximum number of rounds and reasoning effort level (`low`/`medium`/`high`).
+### Game Engine (`guess_name.py`)
+
+* Load a list of characters from a plain-text file (`input_list.txt`).
+* Choose a target name explicitly or at random.
+* Generate yes/no questions using any OpenAI chat model (e.g. `gpt-3.5-turbo`, `o4-mini`).
+* Answer questions with an oracle model (`yes`, `no`, or `successful_guess`).
+* Fully asynchronous oracle evaluation – all surviving candidates are queried in parallel for speed.
+* Records per-question metrics:
+  * **Deviation** of the yes/no split from the ideal 0.50.
+  * **Survivor count** after filtering.
+  * Raw yes/no counts.
+* Saves everything to `experiments/<experiment_name>/`:
+  * `params.json` – the exact CLI parameters & models used.
+  * `results.jsonl` – one JSON line per question with all computed metrics.
+
+### Plotting Utility (`plot_experiments.py`)
+
+* Combine and visualise any number of experiments on one chart.
+* Deviation plotted as solid lines, survivor counts as dashed lines on a secondary y-axis.
+* Automatic colour assignment per experiment + dual legends explaining colour vs. line style.
+* Save to PNG with `--output` or interactively display.
+
+### Workflow Highlights
+
+* Run many parameter sweeps (`--experiment-name`) without manual bookkeeping – every run is archived.
+* Compare variants side-by-side in a single command.
+* Extendable: the JSONL format is easy to post-process in your own analysis scripts.
 
 ## Prerequisites
 
@@ -59,36 +77,23 @@ Steve Jobs
 ## Usage
 
 ```bash
+# Run a game and save as experiment "baseline_low"
 python guess_name.py input_list.txt \
   --model gpt-3.5-turbo \
   --oracle-model o4-mini \
   --reasoning-effort low \
   --max-rounds 20 \
-  --target-name "Steve Jobs"
+  --experiment-name baseline_low
+
+# Compare two experiments
+python plot_experiments.py baseline_low another_experiment --output comparison.png
 ```
-
-- `input_list.txt`: path to the names file
-- `--model`/`-m`: OpenAI model for generating questions
-- `--oracle-model`/`-o`: model used to answer those questions
-- `--reasoning-effort`/`-e`: reasoning effort level (`low`, `medium`, `high`)
-- `--max-rounds`/`-n`: maximum yes/no iterations (default: 20)
-- `--target-name`/`-t`: optional override for the hidden target (random if omitted)
-
-After each question, the script:
-1. Asks the main model to pose a yes/no question.
-2. Uses the oracle model to answer for each surviving candidate.
-3. Filters the candidate pool by the ground-truth answer.
-4. Computes deviation from a perfect split and updates a plot.
-
-At the end, you'll see an interactive Matplotlib chart showing:
-- Deviation from 0.5 (left axis) per question
-- Remaining survivors count (right axis)
 
 ## Development
 
-- The CLI is built with [Typer](https://typer.tiangolo.com/).
-- Async OpenAI calls via `openai.AsyncOpenAI` for parallel oracle evaluation.
-- Plotting with [Matplotlib](https://matplotlib.org/).
+CLI powered by [Typer](https://typer.tiangolo.com/).
+Async interaction via `openai.AsyncOpenAI`.
+Visualisation with [Matplotlib](https://matplotlib.org/) and Seaborn palette.
 
 ## License
 
