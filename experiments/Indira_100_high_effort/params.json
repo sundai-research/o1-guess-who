@@ -1,0 +1,8 @@
+{
+  "input_file": "100_people.txt",
+  "model": "o4-mini",
+  "oracle_model": "o4-mini",
+  "reasoning_effort": "high",
+  "max_rounds": 20,
+  "target_name": "Indira Gandhi"
+}
