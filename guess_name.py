@@ -60,6 +60,9 @@ def main(
         "-n",
         help="Maximum number of questions.",
     ),
+    experiment_name: str = typer.Option(
+        ..., "--experiment-name", "-x", help="Unique name for this experiment."
+    ),
     oracle_model: OpenAIModel = typer.Option(
         OpenAIModel.GPT_4O,
         "--oracle-model",
@@ -101,6 +104,8 @@ def main(
     # initialize survivor pool, deviation and survivors count tracking
     survivors = names.copy()
     deviations = []
+    yes_counts = []
+    no_counts = []
     survivors_counts = [len(survivors)]
 
     # select target character
@@ -168,6 +173,8 @@ def main(
         )
         yes_count = results_list.count("yes")
         no_count = results_list.count("no")
+        yes_counts.append(yes_count)
+        no_counts.append(no_count)
         results = dict(zip(survivors, results_list))
         survivors = [c for c, res in results.items() if res == answer]
         survivors_counts.append(len(survivors))
@@ -182,25 +189,30 @@ def main(
         )
     typer.secho("Max questions reached. Game over.", fg=typer.colors.RED)
 
-    # plot deviation trend and survivor counts on secondary axis
-    if deviations:
-        q_nums = list(range(1, len(deviations)+1))
-        # survivors_count before each question
-        surv_vals = survivors_counts[:-1]
-        fig, ax1 = plt.subplots()
-        ax2 = ax1.twinx()
-        ax1.plot(q_nums, deviations, marker='o', color='tab:blue', label='Deviation')
-        ax2.plot(q_nums, surv_vals, marker='s', color='tab:orange', label='Survivor Count')
-        ax1.axhline(0, color='gray', linestyle='--')
-        ax1.set_xlabel('Question Number')
-        ax1.set_ylabel('Abs Deviation from 0.50', color='tab:blue')
-        ax2.set_ylabel('Survivor Count', color='tab:orange')
-        # combine legends
-        lines1, labels1 = ax1.get_legend_handles_labels()
-        lines2, labels2 = ax2.get_legend_handles_labels()
-        ax1.legend(lines1 + lines2, labels1 + labels2, loc='upper right')
-        plt.title('Split Deviation & Survivor Count')
-        plt.show()
+    # save results to JSONL
+    exp_dir = Path("experiments") / experiment_name
+    exp_dir.mkdir(parents=True, exist_ok=True)
+    params = {
+        "input_file": str(input_file),
+        "model": model.value,
+        "oracle_model": oracle_model.value,
+        "reasoning_effort": reasoning_effort.value,
+        "max_rounds": max_rounds,
+        "target_name": target_name,
+    }
+    (exp_dir / "params.json").write_text(json.dumps(params, indent=2))
+
+    records_file = exp_dir / "results.jsonl"
+    with records_file.open("w", encoding="utf-8") as f:
+        for i, deviation in enumerate(deviations, start=1):
+            record = {
+                "question_number": i,
+                "yes_count": yes_counts[i-1],
+                "no_count": no_counts[i-1],
+                "survivors_count": survivors_counts[i-1],
+                "deviation": deviation,
+            }
+            f.write(json.dumps(record) + "\n")
 
 def select_target_name(names: list[str]) -> str:
     return random.choice(names)
